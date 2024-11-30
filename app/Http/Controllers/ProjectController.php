@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePatchRequest;
 use App\Models\Project;
-use Illuminate\Http\Request;
 use App\Http\Requests\StorePostRequest;
 use Illuminate\Http\JsonResponse;
 
@@ -32,7 +31,7 @@ class ProjectController extends Controller
         return response()->json(['project' => $project], 201);
     }
 
-    public function show($uid): JsonResponse
+    public function show(string $uid): JsonResponse
     {
         $project = Project::where('uid', $uid)->first();
 
@@ -49,7 +48,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function update(StorePatchRequest $request, $uid) :JsonResponse
+    public function update(StorePatchRequest $request, string $uid) :JsonResponse
     {
         $project = Project::where('uid', $uid)->first();
         
@@ -70,8 +69,25 @@ class ProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $uid)
     {
-        //
-    }
+        $project = Project::where('uid', $uid)->first();
+        
+        if ($project === null) {
+            return response()->json([
+                'error' => 'Not Found',
+                'message' => "Project with UID {$uid} not found.",
+                'status' => 404,
+            ], 404);
+        }
+
+        if ($project['status'] === 'CANCELED') {
+            return response()->json([], 204);   
+        }
+
+        $project->status = 'CANCELED';
+        $project->save();
+
+        return response()->json([], 204);   
+     }
 }
